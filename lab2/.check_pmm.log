@@ -1,0 +1,54 @@
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+07F8B4A0+07ECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..(THU.CST) os is loading ...
+
+Special kernel symbols:
+  entry  0xc0100036 (phys)
+  etext  0xc0105eaf (phys)
+  edata  0xc011b000 (phys)
+  end    0xc011bf2c (phys)
+Kernel executable memory footprint: 112KB
+ebp:0xc0117f38 eip: 0xc01009db 0x00010094 0x00010094 0xc0117f68 0xc01000c4 
+    kern/debug/kdebug.c:311: print_stackframe+21
+ebp:0xc0117f48 eip: 0xc0100cd2 0x00000000 0x00000000 0x00000000 0xc0117fb8 
+    kern/debug/kmonitor.c:129: mon_backtrace+10
+ebp:0xc0117f68 eip: 0xc01000c4 0x00000000 0xc0117f90 0xffff0000 0xc0117f94 
+    kern/init/init.c:49: grade_backtrace2+33
+ebp:0xc0117f88 eip: 0xc01000f2 0x00000000 0xffff0000 0xc0117fb4 0x0000002a 
+    kern/init/init.c:54: grade_backtrace1+40
+ebp:0xc0117fa8 eip: 0xc0100112 0x00000000 0xc0100036 0xffff0000 0x0000001d 
+    kern/init/init.c:59: grade_backtrace0+23
+ebp:0xc0117fc8 eip: 0xc010013a 0xc0105edc 0xc0105ec0 0x00000f2c 0x00000000 
+    kern/init/init.c:64: grade_backtrace+34
+ebp:0xc0117ff8 eip: 0xc0100087 0xc010606c 0xc0106074 0xc0100c56 0xc0106093 
+    kern/init/init.c:29: kern_init+80
+memory management: default_pmm_manager
+e820map:
+  memory: 0009fc00, [00000000, 0009fbff], type = 1.
+  memory: 00000400, [0009fc00, 0009ffff], type = 2.
+  memory: 00010000, [000f0000, 000fffff], type = 2.
+  memory: 07ee0000, [00100000, 07fdffff], type = 1.
+  memory: 00020000, [07fe0000, 07ffffff], type = 2.
+  memory: 00040000, [fffc0000, ffffffff], type = 2.
+kernel panic at kern/mm/default_pmm.c:277:
+    assertion failed: (p0 = alloc_page()) == p2 - 1
+stack trackback:
+ebp:0xc0117e98 eip: 0xc01009db 0xc01061a0 0xc0117edc 0x00000115 0xc011e2b0 
+    kern/debug/kdebug.c:311: print_stackframe+21
+ebp:0xc0117ec8 eip: 0xc0100d43 0xc010660b 0x00000115 0xc01065f6 0xc01068e2 
+    kern/debug/panic.c:27: __panic+103
+ebp:0xc0117f68 eip: 0xc010393e 0xc0106a34 0xc0106983 0xffff0000 0x00010094 
+    kern/mm/default_pmm.c:277: default_check+1150
+ebp:0xc0117f88 eip: 0xc01046ed 0x00000000 0xffff0000 0xc0117fb4 0x0000002a 
+    kern/mm/pmm.c:458: check_alloc_page+15
+ebp:0xc0117fc8 eip: 0xc0104483 0xc0105edc 0xc0105ec0 0x00000f2c 0x00000000 
+    kern/mm/pmm.c:292: pmm_init+85
+ebp:0xc0117ff8 eip: 0xc010008c 0xc010606c 0xc0106074 0xc0100c56 0xc0106093 
+    kern/init/init.c:31: kern_init+85
+Welcome to the kernel debug monitor!!
+Type 'help' for a list of commands.
