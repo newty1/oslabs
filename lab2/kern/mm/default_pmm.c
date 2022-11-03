@@ -7,8 +7,9 @@
  * (known as the free list). Once receiving a allocation request for memory,
  * it scans along the list for the first block that is large enough to satisfy
  * the request. If the chosen block is significantly larger than requested, it
- * is usually splitted, and the remainder will be added into the list as
+ * is usually splitted, and the remainder will be added into the list as 
  * another free block.
+ //firstfit 就是从前向后找第一个能够放下的块。 多余的部分会裂开，加到空闲块表里
  *  Please refer to Page 196~198, Section 8.2 of Yan Wei Min's Chinese book
  * "Data Structure -- C programming language".
 */
@@ -16,7 +17,7 @@
 // you should rewrite functions: `default_init`, `default_init_memmap`,
 // `default_alloc_pages`, `default_free_pages`.
 /*
- * Details of FFMA
+ * Details of FFMA 首次内存分配。
  * (1) Preparation:
  *  In order to implement the First-Fit Memory Allocation (FFMA), we should
  * manage the free memory blocks using a list. The struct `free_area_t` is used
@@ -26,14 +27,14 @@
  * USE `list_init`, `list_add`(`list_add_after`), `list_add_before`, `list_del`,
  * `list_next`, `list_prev`.
  *  There's a tricky method that is to transform a general `list` struct to a
- * special struct (such as struct `page`), using the following MACROs: `le2page`
+ * special struct (such as struct `page`), using the following MACROs: `le2page` 使用宏实现list到page的转变。
  * (in memlayout.h), (and in future labs: `le2vma` (in vmm.h), `le2proc` (in
  * proc.h), etc).
  * (2) `default_init`:
  *  You can reuse the demo `default_init` function to initialize the `free_list`
  * and set `nr_free` to 0. `free_list` is used to record the free memory blocks.
  * `nr_free` is the total number of the free memory blocks.
- * (3) `default_init_memmap`:
+ * (3) `default_init_memmap`: 初始化空闲块
  *  CALL GRAPH: `kern_init` --> `pmm_init` --> `page_init` --> `init_memmap` -->
  * `pmm_manager` --> `init_memmap`.
  *  This function is used to initialize a free block (with parameter `addr_base`,
@@ -135,12 +136,15 @@ default_alloc_pages(size_t n) {
         }
     }
     if (page != NULL) {
-        list_del(&(page->page_link));
+        //list_del(&(page->page_link));
         if (page->property > n) {
             struct Page *p = page + n;
+	    //do
             p->property = page->property - n;
-            list_add(&free_list, &(p->page_link));
-    }
+            SetPageProperty(p);
+            list_add_after(&(page->page_link), &(p->page_link));
+        }
+        list_del(&(page->page_link));
         nr_free -= n;
         ClearPageProperty(page);
     }
@@ -162,6 +166,7 @@ default_free_pages(struct Page *base, size_t n) {
     while (le != &free_list) {
         p = le2page(le, page_link);
         le = list_next(le);
+        // TODO: optimize
         if (base + base->property == p) {
             base->property += p->property;
             ClearPageProperty(p);
@@ -175,7 +180,16 @@ default_free_pages(struct Page *base, size_t n) {
         }
     }
     nr_free += n;
-    list_add(&free_list, &(base->page_link));
+    le = list_next(&free_list);
+    while (le != &free_list) {
+        p = le2page(le, page_link);
+        if (base + base->property <= p) {
+            assert(base + base->property != p);
+            break;
+        }
+        le = list_next(le);
+    }
+    list_add_before(le, &(base->page_link));
 }
 
 static size_t
@@ -292,7 +306,7 @@ default_check(void) {
 
     le = &free_list;
     while ((le = list_next(le)) != &free_list) {
-        assert(le->next->prev == le && le->prev->next == le);
+        //assert(le->next->prev == le && le->prev->next == le);
         struct Page *p = le2page(le, page_link);
         count --, total -= p->property;
     }

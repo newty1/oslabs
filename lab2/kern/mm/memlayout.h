@@ -83,12 +83,12 @@ typedef uintptr_t pde_t;
 #define E820_ARR            2       // address range reserved
 
 struct e820map {
-    int nr_map;
+    int nr_map;       //探查到的内存块总数
     struct {
-        uint64_t addr;
-        uint64_t size;
-        uint32_t type;
-    } __attribute__((packed)) map[E820MAX];
+        uint64_t addr; //内存块的起始物理地址
+        uint64_t size;//内存块的大小
+        uint32_t type;//内存块的类型
+    } __attribute__((packed)) map[E820MAX];// 不想要字节对齐，将结构体按照紧凑排列的方式占用内存
 };
 
 /* *
@@ -99,8 +99,7 @@ struct e820map {
 struct Page {
     int ref;                        // page frame's reference counter  被页表的引用次数
     uint32_t flags;                 // array of flags that describe the status of the page frame  物理页的状态 0为已经被分配，1空闲
-    unsigned int property;          // the num of free block, used in first fit pm manager  记录连续空闲块的大小，即地址连续的空闲块的个数，
-                                    // 只在头页里面用到。
+    unsigned int property;          // the num of free block, used in first fit pm manager  记录连续空闲块的大小，即地址连续的空闲块的个数， 只在头页里面用到。
     list_entry_t page_link;         // free list link 用于将多个连续内存空闲块链接的双向链表指针，只在头页里面用到。
 };
 

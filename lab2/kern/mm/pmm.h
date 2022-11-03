@@ -7,15 +7,16 @@
 #include <atomic.h>
 #include <assert.h>
 
-// pmm_manager is a physical memory management class. A special pmm manager - XXX_pmm_manager
-// only needs to implement the methods in pmm_manager class, then XXX_pmm_manager can be used
+// pmm_manager is a physical memory management class.内存管理类 A special pmm manager - XXX_pmm_manager
+// only needs to implement 实现 the methods in pmm_manager class, then XXX_pmm_manager can be used
 // by ucore to manage the total physical memory space.
+//
 struct pmm_manager {
     const char *name;                                 // XXX_pmm_manager's name
     void (*init)(void);                               // initialize internal description&management data structure
                                                       // (free block list, number of free block) of XXX_pmm_manager 
     void (*init_memmap)(struct Page *base, size_t n); // setup description&management data structcure according to
-                                                      // the initial free physical memory space 
+     //函数指针                                                 // the initial free physical memory space 
     struct Page *(*alloc_pages)(size_t n);            // allocate >=n pages, depend on the allocation algorithm 
     void (*free_pages)(struct Page *base, size_t n);  // free >=n pages with "base" addr of Page descriptor structures(memlayout.h)
     size_t (*nr_free_pages)(void);                    // return the number of free pages 
@@ -45,7 +46,7 @@ void tlb_invalidate(pde_t *pgdir, uintptr_t la);
 
 void print_pgdir(void);
 
-/* *
+/* * 虚拟地址转物理地址
  * PADDR - takes a kernel virtual address (an address that points above KERNBASE),
  * where the machine's maximum 256MB of physical memory is mapped and returns the
  * corresponding physical address.  It panics if you pass it a non-kernel virtual address.

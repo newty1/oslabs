@@ -186,15 +186,15 @@ nr_free_pages(void) {
     return ret;
 }
 
-/* pmm_init - initialize the physical memory management */
+/* pmm_init - initialize the physical memory management  负责确定探查到的物理内存块与对应的struct Page之间的映射关系*/
 static void
 page_init(void) {
     struct e820map *memmap = (struct e820map *)(0x8000 + KERNBASE);
-    uint64_t maxpa = 0;
+    uint64_t maxpa = 0;//最大的物理内存地址
 
     cprintf("e820map:\n");
     int i;
-    for (i = 0; i < memmap->nr_map; i ++) {
+    for (i = 0; i < memmap->nr_map; i ++) {//nr_map 探测到的内存总块数
         uint64_t begin = memmap->map[i].addr, end = begin + memmap->map[i].size;
         cprintf("  memory: %08llx, [%08llx, %08llx], type = %d.\n",
                 memmap->map[i].size, begin, end - 1, memmap->map[i].type);
@@ -208,15 +208,19 @@ page_init(void) {
         maxpa = KMEMSIZE;
     }
 
-    extern char end[];
+    extern char end[];//全局变量end记录bootloader加载ucore的结束地址
 
-    npage = maxpa / PGSIZE;
+    npage = maxpa / PGSIZE;//求出所要管理的页数
+    //把end按页大小为边界取整后，作为管理页级物理内存空间所需的Page结构的内存空间
     pages = (struct Page *)ROUNDUP((void *)end, PGSIZE);
-
+    //将所有可用的page设置为reserved，被硬件保留，实现非空闲标记。
     for (i = 0; i < npage; i ++) {
+        
         SetPageReserved(pages + i);
     }
-
+    
+    //sizeof(struct Page) * npage 预估出管理页级物理内存空间所需的Page结构的内存空间大小
+    //空闲空间的起始地址为freemem
     uintptr_t freemem = PADDR((uintptr_t)pages + sizeof(struct Page) * npage);
 
     for (i = 0; i < memmap->nr_map; i ++) {
@@ -231,7 +235,9 @@ page_init(void) {
             if (begin < end) {
                 begin = ROUNDUP(begin, PGSIZE);
                 end = ROUNDDOWN(end, PGSIZE);
-                if (begin < end) {
+                if (begin < end) {//负责确定探查到的物理内存块与对应的struct Page之间的映射关系
+                    //实现空闲标记 把空闲物理页对应的Page结构中的flags和引用计数ref清零，
+                    //并加到free_area.free_list指向的双向列表中，为将来的空闲页管理做好初始化准备工作。
                     init_memmap(pa2page(begin), (end - begin) / PGSIZE);
                 }
             }
@@ -359,6 +365,19 @@ get_pte(pde_t *pgdir, uintptr_t la, bool create) {
     }
     return NULL;          // (8) return page table entry
 #endif
+//todo
+    pde_t *pdep = &pgdir[PDX(la)];
+    if (!(*pdep & PTE_P)) {
+        struct Page *page;
+        if (!create || (page = alloc_page()) == NULL) {
+            return NULL;
+        }
+        set_page_ref(page, 1);
+        uintptr_t pa = page2pa(page);
+        memset(KADDR(pa), 0, PGSIZE);
+        *pdep = pa | PTE_U | PTE_W | PTE_P;
+    }
+    return &((pte_t *)KADDR(PDE_ADDR(*pdep)))[PTX(la)];
 }
 
 //get_page - get related Page struct for linear address la using PDT pgdir
@@ -404,8 +423,17 @@ page_remove_pte(pde_t *pgdir, uintptr_t la, pte_t *ptep) {
                                   //(6) flush tlb
     }
 #endif
+//todo
+    if (*ptep & PTE_P) {
+        struct Page *page = pte2page(*ptep);
+        if (page_ref_dec(page) == 0) {
+            free_page(page);
+        }
+        *ptep = 0;
+        tlb_invalidate(pgdir, la);
+    }
 }
-
+//todo
 //page_remove - free an Page which is related linear address la and has an validated pte
 void
 page_remove(pde_t *pgdir, uintptr_t la) {
